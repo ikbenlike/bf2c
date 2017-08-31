@@ -11,12 +11,11 @@ char *def =
     "#include <errno.h>\n"
     "int main(void){\n"
     "    char *array = calloc(30000, sizeof(char));\n"
+    "    int dptr = 0;\n"
     "    if(array == NULL){\n"
     "        fprintf(stderr, \"%s: %s\\n\", __FILE__, strerror(errno));\n"
     "        exit(1);\n"
-    "    }\n"
-    "    return 0;\n"
-    "}\n";
+    "    }\n";
 
 char *readfile(FILE *f){
     ssize_t size = 4096;
@@ -71,7 +70,37 @@ int main(int argc, char **argv){
         fprintf(stderr, "bf2c: %s\n", strerror(errno));
         return 1;
     }
-    FILE *in = fopen(args->file, "r");
     FILE *out = prepare_output(args->file);
+    FILE *in = fopen(args->file, "r");
+    
+    char *code = readfile(in);
+    size_t max = strlen(code);
+    size_t iptr = 0;
+
+    while(iptr < max){
+        switch(code[iptr]){
+            case '>':
+                fwrite("dptr++;\n", 1, 8, out);
+                break;
+            case '<':
+                fwrite("dptr--;\n", 1, 8, out);
+                break;
+            case '+':
+                fwrite("array[dptr]++;\n", 1, 15, out);
+                break;
+            case '-':
+                fwrite("array[dptr]--;\n", 1, 15, out);
+                break;
+            case '.':
+                fwrite("printf(\"%c\", array[dptr]);\n", 1, 26, out);
+            default:
+                break;
+        }
+        iptr++;
+    }
+
+    fwrite("return 0;\n}\n", 1 , 12, out);
+    fclose(out);
+    
     return 0;
 }
