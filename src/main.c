@@ -5,6 +5,9 @@
 #include <stdbool.h>
 
 char *def =
+    "//\n"
+    "// Generated using bf2c: https://github.com/ikbenlike/bf2c\n"
+    "//\n"
     "#include <stdio.h>\n"
     "#include <stdlib.h>\n"
     "#include <string.h>\n"
@@ -39,7 +42,7 @@ char *readfile(FILE *f){
 FILE *prepare_output(char *path){
     size_t len = strlen(path);
     puts(path);
-    char *out = calloc(len + 5, sizeof(char));
+    char *out = calloc(len + 6, sizeof(char));
     strcpy(out, path);
     strcat(out, "out.c");
     puts(out);
