@@ -194,7 +194,7 @@ int main(int argc, char **argv){
                 break;
             case '.':
                 write_indent(il, out);
-                fwrite("printf(\"%c\", array[dptr]);\n", 1, 27, out);
+                fwrite("putchar(array[dptr]);\n", 1, 22, out);
                 break;
             case ',':
                 write_indent(il, out);
