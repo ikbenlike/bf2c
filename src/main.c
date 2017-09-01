@@ -22,6 +22,7 @@ char *def =
 
 struct bfargs {
     char *file;
+    char *output;
     char *prefix;
     char *postfix;
 };
@@ -42,6 +43,13 @@ struct bfargs *parse_arg(int argc, char **argv){
                 exit(1);
             }
             args->postfix = argv[i];
+        }
+        else if(!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output")){
+            if(argv[++i] == NULL){
+                fprintf(stderr, "bf2c: -o: you need to provide a filename\n");
+                exit(1);
+            }
+            args->output = argv[i];
         }
         else {
             args->file = argv[i];
@@ -69,13 +77,15 @@ char *readfile(FILE *f){
     return buf;
 }
 
-FILE *prepare_output(char *path, char *prefix){
+FILE *prepare_output(char *path, char *out, char *prefix){
     size_t len = strlen(path);
     puts(path);
-    char *out = calloc(len + 6, sizeof(char));
-    strcpy(out, path);
-    strcat(out, "out.c");
-    puts(out);
+    if(!out){
+        out = calloc(len + 6, sizeof(char));
+        strcpy(out, path);
+        strcat(out, "out.c");
+        puts(out);
+    }
     FILE *f = fopen(out, "w");
     if(prefix){
         FILE *pre = fopen(prefix, "r");
@@ -123,7 +133,7 @@ int main(int argc, char **argv){
         fprintf(stderr, "bf2c: %s\n", strerror(errno));
         return 1;
     }
-    FILE *out = prepare_output(args->file, args->prefix);
+    FILE *out = prepare_output(args->file, args->output, args->prefix);
     FILE *in = fopen(args->file, "r");
     
     char *code = readfile(in);
