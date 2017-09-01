@@ -34,14 +34,14 @@ struct bfargs *parse_arg(int argc, char **argv){
                 fprintf(stderr, "bf2c: --prefix: you need to provide a file\n");
                 exit(1);
             }
-            args->prefix = argv[i++];
+            args->prefix = argv[i];
         }
         else if(!strcmp(argv[i], "--postfix")){
             if(argv[++i] == NULL){
                 fprintf(stderr, "bf2c: --postfix: you need to provide a file\n");
                 exit(1);
             }
-            args->postfix = argv[i++];
+            args->postfix = argv[i];
         }
         else {
             args->file = argv[i];
@@ -77,8 +77,28 @@ FILE *prepare_output(char *path, char *prefix){
     strcat(out, "out.c");
     puts(out);
     FILE *f = fopen(out, "w");
+    if(prefix){
+        FILE *pre = fopen(prefix, "r");
+        char *contents = readfile(pre);
+        fwrite(contents, 1, strlen(contents), f);
+        fclose(pre);
+        free(contents);
+        return f;
+    }
     fwrite(def, 1, strlen(def), f);
     return f;
+}
+
+void finish_output(FILE *out, char *postfix){
+    if(postfix){
+        FILE *post = fopen(postfix, "r");
+        char *contents = readfile(post);
+        fclose(post);
+        fwrite(contents, 1, strlen(contents), out);
+        free(contents);
+        return;
+    }
+    fwrite("    return 0;\n}\n", 1 , 16, out);
 }
 
 void write_indent(size_t n, FILE *out){
@@ -103,7 +123,7 @@ int main(int argc, char **argv){
         fprintf(stderr, "bf2c: %s\n", strerror(errno));
         return 1;
     }
-    FILE *out = prepare_output(args->file, NULL);
+    FILE *out = prepare_output(args->file, args->prefix);
     FILE *in = fopen(args->file, "r");
     
     char *code = readfile(in);
@@ -186,8 +206,11 @@ int main(int argc, char **argv){
         iptr++;
     }
 
-    fwrite("    return 0;\n}\n", 1 , 16, out);
+    finish_output(out, args->postfix);
+    free(code);
     fclose(out);
+    fclose(in);
+    free(args);
     
     return 0;
 }
