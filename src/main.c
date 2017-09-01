@@ -38,9 +38,11 @@ char *readfile(FILE *f){
 
 FILE *prepare_output(char *path){
     size_t len = strlen(path);
+    puts(path);
     char *out = calloc(len + 5, sizeof(char));
     strcpy(out, path);
     strcat(out, "out.c");
+    puts(out);
     FILE *f = fopen(out, "w");
     fwrite(def, 1, strlen(def), f);
     return f;
@@ -64,6 +66,22 @@ struct bfargs *parse_arg(int argc, char **argv){
     return args;
 }
 
+void write_indent(size_t n, FILE *out){
+    for(size_t i = 0; i < n; i++){
+        fwrite("    ", 1, 4, out);
+    }
+}
+
+size_t detect_sequence(char *code, size_t iptr){
+    char c = code[iptr];
+    size_t count = 0;
+
+    while (code[iptr + count] == c) {
+        count++;
+    }
+    return count;
+}
+
 int main(int argc, char **argv){
     struct bfargs *args = parse_arg(argc, argv);
     if(!args){
@@ -76,30 +94,84 @@ int main(int argc, char **argv){
     char *code = readfile(in);
     size_t max = strlen(code);
     size_t iptr = 0;
+    size_t il = 1;
 
     while(iptr < max){
+        size_t seq = 1;
         switch(code[iptr]){
             case '>':
+                write_indent(il, out);
+                seq = detect_sequence(code, iptr);
+                if(seq != 1){
+                    char tmp[256] = {0};
+                    snprintf(tmp, 255, "dptr += %zu;\n", seq);
+                    fwrite(tmp, 1, strlen(tmp), out);
+                    iptr += seq - 1;
+                    break;
+                }
                 fwrite("dptr++;\n", 1, 8, out);
                 break;
             case '<':
+                write_indent(il, out);
+                seq = detect_sequence(code, iptr);
+                if(seq != 1){
+                    char tmp[256] = {0};
+                    snprintf(tmp, 255, "dptr -= %zu;\n", seq);
+                    fwrite(tmp, 1, strlen(tmp), out);
+                    iptr += seq - 1;
+                    break;
+                }
                 fwrite("dptr--;\n", 1, 8, out);
                 break;
             case '+':
+                write_indent(il, out);
+                seq = detect_sequence(code, iptr);
+                if(seq != 1){
+                    char tmp[256] = {0};
+                    snprintf(tmp, 255, "array[dptr] += %zu;\n", seq);
+                    fwrite(tmp, 1, strlen(tmp), out);
+                    iptr += seq - 1;
+                    break;
+                }
                 fwrite("array[dptr]++;\n", 1, 15, out);
                 break;
             case '-':
+                write_indent(il, out);
+                seq = detect_sequence(code, iptr);
+                if(seq != 1){
+                    char tmp[256] = {0};
+                    snprintf(tmp, 255, "array[dptr] -= %zu\n", seq);
+                    fwrite(tmp, 1, strlen(tmp), out);
+                    iptr += seq - 1;
+                    break;
+                }
                 fwrite("array[dptr]--;\n", 1, 15, out);
                 break;
             case '.':
-                fwrite("printf(\"%c\", array[dptr]);\n", 1, 26, out);
+                write_indent(il, out);
+                fwrite("printf(\"%c\", array[dptr]);\n", 1, 27, out);
+                break;
+            case ',':
+                write_indent(il, out);
+                fwrite("array[dptr] = getc(stdin);\n", 1, 27, out);
+                break;
+            case '[':
+                write_indent(il, out);
+                fwrite("while(array[dptr]){\n", 1, 20, out);
+                il++;
+                break;
+            case ']':
+                il--;
+                write_indent(il, out);
+                fwrite("}\n", 1, 2, out);
+                break;
             default:
                 break;
         }
         iptr++;
     }
 
-    fwrite("return 0;\n}\n", 1 , 12, out);
+    fwrite("    return 0;\n}\n", 1 , 16, out);
     fclose(out);
     
     return 0;
