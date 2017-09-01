@@ -20,6 +20,36 @@ char *def =
     "        exit(1);\n"
     "    }\n";
 
+struct bfargs {
+    char *file;
+    char *prefix;
+    char *postfix;
+};
+
+struct bfargs *parse_arg(int argc, char **argv){
+    struct bfargs *args = calloc(1, sizeof(struct bfargs));
+    for(int i = 1; i < argc; i++){
+        if(!strcmp(argv[i], "--prefix")){
+            if(argv[++i] == NULL){
+                fprintf(stderr, "bf2c: --prefix: you need to provide a file\n");
+                exit(1);
+            }
+            args->prefix = argv[i++];
+        }
+        else if(!strcmp(argv[i], "--postfix")){
+            if(argv[++i] == NULL){
+                fprintf(stderr, "bf2c: --postfix: you need to provide a file\n");
+                exit(1);
+            }
+            args->postfix = argv[i++];
+        }
+        else {
+            args->file = argv[i];
+        }
+    }
+    return args;
+}
+
 char *readfile(FILE *f){
     ssize_t size = 4096;
     char *buf = calloc(size, sizeof(char));
@@ -39,7 +69,7 @@ char *readfile(FILE *f){
     return buf;
 }
 
-FILE *prepare_output(char *path){
+FILE *prepare_output(char *path, char *prefix){
     size_t len = strlen(path);
     puts(path);
     char *out = calloc(len + 6, sizeof(char));
@@ -49,24 +79,6 @@ FILE *prepare_output(char *path){
     FILE *f = fopen(out, "w");
     fwrite(def, 1, strlen(def), f);
     return f;
-}
-
-struct bfargs {
-    char *file;
-    bool keep;
-};
-
-struct bfargs *parse_arg(int argc, char **argv){
-    struct bfargs *args = calloc(1, sizeof(struct bfargs));
-    for(int i = 1; i < argc; i++){
-        if(!strcmp(argv[i], "--keep") || !strcmp(argv[i], "-k")){
-            args->keep = true;
-        }
-        else {
-            args->file = argv[i];
-        }
-    }
-    return args;
 }
 
 void write_indent(size_t n, FILE *out){
@@ -91,7 +103,7 @@ int main(int argc, char **argv){
         fprintf(stderr, "bf2c: %s\n", strerror(errno));
         return 1;
     }
-    FILE *out = prepare_output(args->file);
+    FILE *out = prepare_output(args->file, NULL);
     FILE *in = fopen(args->file, "r");
     
     char *code = readfile(in);
@@ -143,7 +155,7 @@ int main(int argc, char **argv){
                 seq = detect_sequence(code, iptr);
                 if(seq != 1){
                     char tmp[256] = {0};
-                    snprintf(tmp, 255, "array[dptr] -= %zu\n", seq);
+                    snprintf(tmp, 255, "array[dptr] -= %zu;\n", seq);
                     fwrite(tmp, 1, strlen(tmp), out);
                     iptr += seq - 1;
                     break;
