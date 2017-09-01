@@ -198,7 +198,7 @@ int main(int argc, char **argv){
                 break;
             case ',':
                 write_indent(il, out);
-                fwrite("array[dptr] = getc(stdin);\n", 1, 27, out);
+                fwrite("array[dptr] = getchar();\n", 1, 25, out);
                 break;
             case '[':
                 write_indent(il, out);
