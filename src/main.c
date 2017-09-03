@@ -63,15 +63,18 @@ char *readfile(FILE *f){
     char *buf = calloc(size, sizeof(char));
     char *tmp = NULL;
     ssize_t n = 0;
-    while((n = fread(buf, sizeof(char), size, f)) > 0){
-        if(n > size){
-            size *= 1.5;
+    ssize_t offset = n;
+    while((n = fread(buf + offset, sizeof(char), size - offset, f)) > 0){
+        offset += n;
+        if(offset >= size){
+            size *= 2;
             tmp = realloc(buf, size * sizeof(char));
             if(!tmp){
                 fprintf(stderr, "bf2c: %s\n", strerror(errno));
                 free(buf);
                 exit(1);
             }
+            buf = tmp;
         }
     }
     return buf;
