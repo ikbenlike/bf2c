@@ -58,7 +58,7 @@ struct bfargs *parse_arg(int argc, char **argv){
     return args;
 }
 
-char *readfile(FILE *f){
+/*char *readfile(FILE *f){
     ssize_t size = 4096;
     char *buf = calloc(size, sizeof(char));
     char *tmp = NULL;
@@ -77,7 +77,16 @@ char *readfile(FILE *f){
             buf = tmp;
         }
     }
+    puts(buf);
     return buf;
+}*/
+char *readfile(FILE *fp){
+    fseek(fp, 0, SEEK_END);
+    size_t len = ftell(fp);
+    rewind(fp);
+    char *buffer = calloc(len + 1, sizeof(char));
+    fread(buffer, len, 1, fp);
+    return buffer;
 }
 
 FILE *prepare_output(char *path, char *out, char *prefix){

@@ -9,3 +9,5 @@
 vgcore.*
 *.out
 *.bfout.c
+*.exe
+*.obj
